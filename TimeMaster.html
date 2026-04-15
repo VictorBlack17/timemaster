@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1923">
+<title>TimeMaster — Métodos y Tiempos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f1923;--bg2:#16202e;--bg3:#1d2d3f;--bg4:#243347;
+  --accent:#2dd4bf;--accent2:#0ea5e9;--accent3:#f59e0b;
+  --text:#e8edf2;--text2:#8fa3b8;--text3:#526070;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;
+  --r:12px;--r2:8px;--r3:20px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative}
+
+/* NAV */
+.top-bar{background:var(--bg2);border-bottom:1px solid var(--bg3);padding:12px 16px;display:flex;align-items:center;gap:10px;min-height:54px;flex-shrink:0}
+.top-bar h1{font-size:16px;font-weight:600;flex:1;letter-spacing:-.3px}
+.top-bar .badge{background:var(--bg3);color:var(--accent);font-size:11px;padding:3px 8px;border-radius:20px;font-family:'DM Mono',monospace}
+.btn-icon{width:34px;height:34px;border-radius:var(--r2);border:1px solid var(--bg3);background:var(--bg3);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.btn-icon:active{transform:scale(.94);background:var(--bg4)}
+.bottom-nav{background:var(--bg2);border-top:1px solid var(--bg3);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0 8px;cursor:pointer;border:none;background:transparent;gap:3px;transition:color .15s}
+.bn span{font-size:10px;color:var(--text3)}
+.bn svg{transition:color .15s}
+.bn.active svg,.bn.active span{color:var(--accent)}
+.bn:not(.active) svg{color:var(--text3)}
+
+/* CONTENT */
+.screen{flex:1;overflow-y:auto;padding:14px;display:none;flex-direction:column;gap:12px}
+.screen.active{display:flex}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--r);padding:14px}
+.card-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--bg3);border-radius:var(--r2);padding:12px}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace}
+
+/* FORM INPUTS */
+.input{width:100%;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r2);padding:9px 12px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border .15s}
+.input:focus{border-color:var(--accent)}
+.label{font-size:12px;color:var(--text2);margin-bottom:5px}
+.field{margin-bottom:10px}
+select.input option{background:var(--bg2)}
+
+/* BUTTONS */
+.btn{border:1px solid var(--bg4);background:var(--bg3);color:var(--text);border-radius:var(--r2);padding:9px 16px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#0f1923;font-weight:600}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+.btn-red{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+.btn-full{width:100%}
+.row{display:flex;gap:8px;align-items:center}
+.flex1{flex:1}
+
+/* CRONÓMETRO */
+.chro-wrap{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--r3);padding:24px 16px;text-align:center}
+.chro-time{font-family:'DM Mono',monospace;font-size:52px;font-weight:500;color:var(--text);letter-spacing:2px;line-height:1}
+.chro-lap{font-family:'DM Mono',monospace;font-size:18px;color:var(--accent);margin-top:6px}
+.chro-activity{font-size:13px;color:var(--text2);margin-top:8px}
+.chro-btns{display:flex;gap:10px;justify-content:center;margin-top:16px}
+.chro-btns .btn{min-width:88px;padding:11px 0}
+
+/* LAPS */
+.lap-list{display:flex;flex-direction:column;gap:1px}
+.lap-row{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg2);border-radius:var(--r2);font-size:13px}
+.lap-n{color:var(--text3);font-family:'DM Mono',monospace;min-width:28px}
+.lap-time{font-family:'DM Mono',monospace;font-weight:500;flex:1}
+.lap-delta{font-size:12px;font-family:'DM Mono',monospace}
+.lap-note{font-size:11px;color:var(--text3);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.delta-fast{color:var(--green)}
+.delta-slow{color:var(--red)}
+
+/* ITEMS */
+.item-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--r2);cursor:pointer;transition:background .15s}
+.item-row:active{background:var(--bg3)}
+.item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.item-info{flex:1;min-width:0}
+.item-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.item-time{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);text-align:right}
+.tag{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500}
+.tag-A{background:#10b98120;color:var(--green)}
+.tag-B{background:#f59e0b20;color:var(--amber)}
+.tag-C{background:#ef444420;color:var(--red)}
+
+/* ESTADÍSTICAS */
+.stat-bar-wrap{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.stat-bar-fill{height:6px;border-radius:3px;background:var(--accent);transition:width .4s}
+.hist-wrap{display:flex;align-items:flex-end;gap:4px;height:72px;margin-top:8px}
+.hist-bar{flex:1;border-radius:3px 3px 0 0;min-width:0;transition:height .3s}
+.hist-labels{display:flex;gap:4px;margin-top:3px}
+.hist-label{flex:1;font-size:10px;color:var(--text3);text-align:center}
+
+/* MODAL */
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:20;border-radius:inherit}
+.overlay.open{display:flex}
+.sheet{background:var(--bg2);border-radius:var(--r3) var(--r3) 0 0;padding:16px;width:100%;border-top:1px solid var(--bg3);max-height:85vh;overflow-y:auto}
+.sheet-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 14px}
+.sheet-title{font-size:16px;font-weight:600;margin-bottom:14px}
+
+/* ESTUDIO ROW */
+.estudio-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--r2);margin-bottom:6px}
+.estudio-info{flex:1;min-width:0}
+.estudio-name{font-size:14px;font-weight:500}
+.estudio-sub{font-size:12px;color:var(--text3);margin-top:1px}
+
+/* TOAST */
+.toast{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:var(--bg4);color:var(--text);padding:9px 18px;border-radius:20px;font-size:13px;white-space:nowrap;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* EXPORT */
+.export-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg3)}
+.export-row:last-child{border-bottom:none}
+.export-icon{width:36px;height:36px;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.export-info{flex:1}
+.export-name{font-size:14px;font-weight:500}
+.export-sub{font-size:12px;color:var(--text3);margin-top:1px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top-bar">
+    <h1 id="top-title">TimeMaster</h1>
+    <span class="badge" id="top-badge">OPAV 109</span>
+    <button class="btn-icon" onclick="openModal('modal-nuevo')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+
+  <!-- SCREEN: INICIO -->
+  <div class="screen active" id="s-inicio">
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Estudios activos</div><div class="stat-val" id="cnt-estudios">0</div></div>
+      <div class="stat"><div class="stat-label">Total vueltas</div><div class="stat-val" id="cnt-vueltas">0</div></div>
+      <div class="stat"><div class="stat-label">Actividades</div><div class="stat-val" id="cnt-actividades">0</div></div>
+      <div class="stat"><div class="stat-label">Último registro</div><div class="stat-val" id="cnt-ultimo" style="font-size:13px;padding-top:4px">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Estudios</div>
+      <div id="lista-estudios"><p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Sin estudios. Toca + para crear uno.</p></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: CRONÓMETRO -->
+  <div class="screen" id="s-crono">
+    <div class="chro-wrap">
+      <div class="chro-time" id="display-total">00:00.00</div>
+      <div class="chro-lap" id="display-vuelta">vuelta: 00:00.00</div>
+      <div class="chro-activity" id="display-actividad">Selecciona una actividad</div>
+      <div class="chro-btns">
+        <button class="btn" id="btn-vuelta" onclick="registrarVuelta()" disabled>Vuelta</button>
+        <button class="btn btn-primary" id="btn-play" onclick="toggleCrono()">Iniciar</button>
+        <button class="btn" onclick="resetCrono()">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Actividad</div>
+      <div class="row gap-8">
+        <select class="input flex1" id="sel-actividad" onchange="cambiarActividad()"><option value="">— Seleccionar —</option></select>
+        <button class="btn btn-icon" onclick="openModal('modal-actividad')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div style="margin-top:8px">
+        <div class="label">Nota para esta vuelta</div>
+        <input class="input" id="nota-vuelta" placeholder="Observación opcional...">
+      </div>
+    </div>
+    <div class="card" id="card-laps">
+      <div class="card-title" id="laps-titulo">Vueltas registradas (0)</div>
+      <div class="lap-list" id="lista-laps"><p style="color:var(--text3);font-size:13px;text-align:center;padding:8px 0">Sin vueltas aún.</p></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: ITEMS -->
+  <div class="screen" id="s-items">
+    <div class="row" style="margin-bottom:2px">
+      <select class="input flex1" id="sel-estudio-items" onchange="cargarItemsEstudio()"><option value="">— Seleccionar estudio —</option></select>
+    </div>
+    <div id="lista-items-wrap">
+      <div class="card">
+        <p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Selecciona un estudio para ver sus actividades.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: ESTADÍSTICAS -->
+  <div class="screen" id="s-stats">
+    <div class="row" style="margin-bottom:2px">
+      <select class="input flex1" id="sel-estudio-stats" onchange="cargarStats()"><option value="">— Seleccionar estudio —</option></select>
+    </div>
+    <div id="stats-content">
+      <div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Selecciona un estudio.</p></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: EXPORTAR -->
+  <div class="screen" id="s-export">
+    <div class="card">
+      <div class="card-title">Seleccionar estudio</div>
+      <select class="input" id="sel-estudio-export" onchange="actualizarExport()"><option value="">— Todos los estudios —</option></select>
+    </div>
+    <div class="card">
+      <div class="card-title">Formato</div>
+      <div class="export-row">
+        <div class="export-icon" style="background:#10b98120">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        </div>
+        <div class="export-info"><div class="export-name">Excel / CSV</div><div class="export-sub">Abre directo en Excel, compatible con OPAV</div></div>
+        <button class="btn btn-green" onclick="exportarCSV()">Exportar</button>
+      </div>
+      <div class="export-row">
+        <div class="export-icon" style="background:#0ea5e920">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="export-info"><div class="export-name">JSON (respaldo)</div><div class="export-sub">Copia de seguridad completa de todos los datos</div></div>
+        <button class="btn" onclick="exportarJSON()">Exportar</button>
+      </div>
+      <div class="export-row">
+        <div class="export-icon" style="background:#f59e0b20">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+        </div>
+        <div class="export-info"><div class="export-name">Importar datos</div><div class="export-sub">Restaurar desde un JSON de respaldo</div></div>
+        <button class="btn" onclick="document.getElementById('file-import').click()">Importar</button>
+        <input type="file" id="file-import" accept=".json" style="display:none" onchange="importarJSON(this)">
+      </div>
+    </div>
+    <div class="card" id="export-preview">
+      <div class="card-title">Vista previa</div>
+      <p style="color:var(--text3);font-size:13px">Selecciona un estudio para ver resumen.</p>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bn active" onclick="ir('inicio')" id="bn-inicio">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span>Inicio</span>
+    </button>
+    <button class="bn" onclick="ir('crono')" id="bn-crono">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Cronómetro</span>
+    </button>
+    <button class="bn" onclick="ir('items')" id="bn-items">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>Items</span>
+    </button>
+    <button class="bn" onclick="ir('stats')" id="bn-stats">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Estadísticas</span>
+    </button>
+    <button class="bn" onclick="ir('export')" id="bn-export">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Exportar</span>
+    </button>
+  </nav>
+
+  <!-- MODALS -->
+  <!-- Modal: Nuevo estudio -->
+  <div class="overlay" id="modal-nuevo">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Nuevo estudio</div>
+      <div class="field"><div class="label">Nombre del estudio</div><input class="input" id="f-nombre" placeholder="ej: Línea Eviscerado T2"></div>
+      <div class="field"><div class="label">Tipo de estudio</div>
+        <select class="input" id="f-tipo">
+          <option>Métodos y tiempos</option>
+          <option>Muestreo de trabajo</option>
+          <option>Capacidad de proceso</option>
+          <option>MTM</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="field"><div class="label">Operario / Área</div><input class="input" id="f-operario" placeholder="ej: Juan R. — Planta 109"></div>
+      <div class="field"><div class="label">Descripción (opcional)</div><textarea class="input" id="f-desc" rows="2" placeholder="Notas generales del estudio..."></textarea></div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn flex1" onclick="closeModal('modal-nuevo')">Cancelar</button>
+        <button class="btn btn-primary flex1" onclick="crearEstudio()">Crear estudio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nueva actividad -->
+  <div class="overlay" id="modal-actividad">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Nueva actividad</div>
+      <div class="field"><div class="label">Estudio</div>
+        <select class="input" id="f-act-estudio"></select>
+      </div>
+      <div class="row gap-8" style="margin-bottom:10px">
+        <div class="flex1"><div class="label">Código</div><input class="input" id="f-act-codigo" placeholder="A1"></div>
+        <div class="flex1"><div class="label">Tipo</div>
+          <select class="input" id="f-act-tipo">
+            <option value="A">A — Regular</option>
+            <option value="B">B — Irregular</option>
+            <option value="C">C — Eventual</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><div class="label">Descripción</div><input class="input" id="f-act-desc" placeholder="ej: Colgado de pollo"></div>
+      <div class="row gap-8" style="margin-bottom:10px">
+        <div class="flex1"><div class="label">Frecuencia</div><input class="input" id="f-act-frec" placeholder="1" type="number" min="1"></div>
+        <div class="flex1"><div class="label">Unidad</div>
+          <select class="input" id="f-act-unidad">
+            <option>por ciclo</option>
+            <option>por turno</option>
+            <option>por hora</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn flex1" onclick="closeModal('modal-actividad')">Cancelar</button>
+        <button class="btn btn-primary flex1" onclick="crearActividad()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ============ ESTADO ============
+let DB = JSON.parse(localStorage.getItem('tm_db') || '{"estudios":[],"actividades":[],"vueltas":[]}');
+let estudioActivo = localStorage.getItem('tm_estudio') || null;
+let actividadActiva = null;
+
+// Cronómetro
+let cronoRunning = false, cronoStart = 0, cronoElapsed = 0;
+let lapStart = 0, lapElapsed = 0;
+let cronoInterval = null;
+let currentLaps = [];
+
+// ============ PERSISTENCIA ============
+function save() { localStorage.setItem('tm_db', JSON.stringify(DB)); }
+
+// ============ NAVEGACIÓN ============
+function ir(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bn').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + screen).classList.add('active');
+  document.getElementById('bn-' + screen).classList.add('active');
+  const titles = {inicio:'TimeMaster',crono:'Cronómetro',items:'Actividades',stats:'Estadísticas',export:'Exportar'};
+  document.getElementById('top-title').textContent = titles[screen];
+  if(screen==='crono') renderLaps();
+  if(screen==='items') { syncEstudioSelects(); cargarItemsEstudio(); }
+  if(screen==='stats') { syncEstudioSelects(); }
+  if(screen==='export') { syncEstudioSelects(); }
+  if(screen==='inicio') renderInicio();
+}
+
+function openModal(id) {
+  if(id==='modal-actividad') syncEstudioSelects();
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ============ ESTUDIOS ============
+function crearEstudio() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if(!nombre) { toast('Escribe un nombre para el estudio'); return; }
+  const est = {
+    id: 'e' + Date.now(),
+    nombre,
+    tipo: document.getElementById('f-tipo').value,
+    operario: document.getElementById('f-operario').value.trim(),
+    desc: document.getElementById('f-desc').value.trim(),
+    fecha: new Date().toLocaleDateString('es-CO'),
+    ts: Date.now()
+  };
+  DB.estudios.push(est);
+  save();
+  closeModal('modal-nuevo');
+  ['f-nombre','f-operario','f-desc'].forEach(id => document.getElementById(id).value='');
+  toast('Estudio creado: ' + nombre);
+  renderInicio();
+  syncEstudioSelects();
+}
+
+function renderInicio() {
+  document.getElementById('cnt-estudios').textContent = DB.estudios.length;
+  document.getElementById('cnt-vueltas').textContent = DB.vueltas.length;
+  document.getElementById('cnt-actividades').textContent = DB.actividades.length;
+  const ultima = DB.vueltas.length ? new Date(DB.vueltas[DB.vueltas.length-1].ts).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}) : '—';
+  document.getElementById('cnt-ultimo').textContent = ultima;
+
+  const cont = document.getElementById('lista-estudios');
+  if(!DB.estudios.length) { cont.innerHTML='<p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Sin estudios. Toca + para crear uno.</p>'; return; }
+  cont.innerHTML = DB.estudios.map(e => {
+    const acts = DB.actividades.filter(a=>a.estudioId===e.id).length;
+    const vueltas = DB.vueltas.filter(v=>v.estudioId===e.id).length;
+    return `<div class="estudio-row">
+      <div class="estudio-info">
+        <div class="estudio-name">${e.nombre}</div>
+        <div class="estudio-sub">${e.tipo} · ${acts} act. · ${vueltas} vueltas · ${e.fecha}</div>
+      </div>
+      <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="abrirEstudio('${e.id}')">Abrir</button>
+    </div>`;
+  }).join('');
+}
+
+function abrirEstudio(id) {
+  estudioActivo = id;
+  localStorage.setItem('tm_estudio', id);
+  const e = DB.estudios.find(x=>x.id===id);
+  document.getElementById('top-badge').textContent = e ? e.nombre.substring(0,12) : '';
+  syncActividadSelect();
+  currentLaps = DB.vueltas.filter(v=>v.estudioId===id);
+  renderLaps();
+  ir('crono');
+}
+
+// ============ ACTIVIDADES ============
+function syncEstudioSelects() {
+  ['sel-estudio-items','sel-estudio-stats','sel-estudio-export','f-act-estudio'].forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const val = sel.value;
+    sel.innerHTML = (id==='sel-estudio-export'?'<option value="">— Todos —</option>':'<option value="">— Seleccionar —</option>') +
+      DB.estudios.map(e=>`<option value="${e.id}"${e.id===estudioActivo?' selected':''}>${e.nombre}</option>`).join('');
+    if(val) sel.value = val;
+  });
+}
+
+function syncActividadSelect() {
+  const sel = document.getElementById('sel-actividad');
+  const acts = DB.actividades.filter(a=>a.estudioId===estudioActivo);
+  sel.innerHTML = '<option value="">— Seleccionar actividad —</option>' +
+    acts.map(a=>`<option value="${a.id}">${a.codigo} — ${a.desc}</option>`).join('');
+}
+
+function crearActividad() {
+  const estId = document.getElementById('f-act-estudio').value;
+  const desc = document.getElementById('f-act-desc').value.trim();
+  if(!estId) { toast('Selecciona un estudio'); return; }
+  if(!desc) { toast('Escribe una descripción'); return; }
+  const act = {
+    id: 'a' + Date.now(),
+    estudioId: estId,
+    codigo: document.getElementById('f-act-codigo').value.trim() || 'A',
+    tipo: document.getElementById('f-act-tipo').value,
+    desc,
+    frec: document.getElementById('f-act-frec').value || '1',
+    unidad: document.getElementById('f-act-unidad').value,
+    ts: Date.now()
+  };
+  DB.actividades.push(act);
+  save();
+  closeModal('modal-actividad');
+  ['f-act-codigo','f-act-desc'].forEach(id=>document.getElementById(id).value='');
+  toast('Actividad creada: ' + act.codigo);
+  if(estId === estudioActivo) syncActividadSelect();
+  cargarItemsEstudio();
+}
+
+function cambiarActividad() {
+  actividadActiva = document.getElementById('sel-actividad').value || null;
+  const act = DB.actividades.find(a=>a.id===actividadActiva);
+  document.getElementById('display-actividad').textContent = act ? act.codigo + ' — ' + act.desc : 'Selecciona una actividad';
+}
+
+function cargarItemsEstudio() {
+  const estId = document.getElementById('sel-estudio-items').value;
+  const wrap = document.getElementById('lista-items-wrap');
+  if(!estId){ wrap.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Selecciona un estudio.</p></div>'; return; }
+  const acts = DB.actividades.filter(a=>a.estudioId===estId);
+  if(!acts.length){ wrap.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Sin actividades. Toca + para agregar.</p></div>'; return; }
+  const cols = {'A':'#10b981','B':'#f59e0b','C':'#ef4444'};
+  wrap.innerHTML = '<div class="card"><div class="card-title">Actividades del estudio</div>' +
+    acts.map(a => {
+      const vueltas = DB.vueltas.filter(v=>v.actividadId===a.id);
+      const avg = vueltas.length ? (vueltas.reduce((s,v)=>s+v.tiempo,0)/vueltas.length).toFixed(2) : '—';
+      return `<div class="item-row" onclick="editarActividad('${a.id}')">
+        <div class="item-dot" style="background:${cols[a.tipo]||'#888'}"></div>
+        <div class="item-info">
+          <div class="item-name">${a.codigo} — ${a.desc}</div>
+          <div class="item-sub">${a.frec} ${a.unidad} · ${vueltas.length} muestras</div>
+        </div>
+        <div>
+          <div class="item-time">${avg === '—' ? '—' : avg+'s'}</div>
+          <div class="tag tag-${a.tipo}" style="margin-top:3px;text-align:center">${a.tipo}</div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function editarActividad(id) {
+  const a = DB.actividades.find(x=>x.id===id);
+  if(!a) return;
+  const n = prompt(`Actividad: ${a.codigo} — ${a.desc}\n\n¿Qué quieres hacer?\n1 = Ver vueltas en cronómetro\n2 = Eliminar actividad\n\nEscribe 1 o 2:`);
+  if(n==='1') {
+    estudioActivo = a.estudioId;
+    localStorage.setItem('tm_estudio', estudioActivo);
+    syncActividadSelect();
+    document.getElementById('sel-actividad').value = id;
+    cambiarActividad();
+    currentLaps = DB.vueltas.filter(v=>v.actividadId===id);
+    renderLaps();
+    ir('crono');
+  } else if(n==='2') {
+    if(confirm('¿Eliminar actividad y sus vueltas?')) {
+      DB.actividades = DB.actividades.filter(x=>x.id!==id);
+      DB.vueltas = DB.vueltas.filter(v=>v.actividadId!==id);
+      save(); cargarItemsEstudio(); toast('Actividad eliminada');
+    }
+  }
+}
+
+// ============ CRONÓMETRO ============
+function pad(n,d=2){ return String(Math.floor(n)).padStart(d,'0'); }
+function fmtMs(ms){
+  const cs = Math.floor(ms/10)%100;
+  const s = Math.floor(ms/1000)%60;
+  const m = Math.floor(ms/60000);
+  return pad(m)+':'+pad(s)+'.'+pad(cs);
+}
+
+function toggleCrono(){
+  const btn = document.getElementById('btn-play');
+  const lapBtn = document.getElementById('btn-vuelta');
+  if(!cronoRunning){
+    cronoStart = Date.now() - cronoElapsed;
+    lapStart = Date.now() - lapElapsed;
+    cronoRunning = true;
+    btn.textContent = 'Pausar';
+    btn.classList.remove('btn-primary'); btn.classList.add('btn-red');
+    lapBtn.disabled = false;
+    cronoInterval = setInterval(tickCrono, 23);
+  } else {
+    clearInterval(cronoInterval);
+    cronoRunning = false;
+    btn.textContent = 'Reanudar';
+    btn.classList.remove('btn-red'); btn.classList.add('btn-primary');
+  }
+}
+
+function tickCrono(){
+  cronoElapsed = Date.now() - cronoStart;
+  lapElapsed = Date.now() - lapStart;
+  document.getElementById('display-total').textContent = fmtMs(cronoElapsed);
+  document.getElementById('display-vuelta').textContent = 'vuelta: ' + fmtMs(lapElapsed);
+}
+
+function registrarVuelta(){
+  if(!cronoRunning && cronoElapsed === 0) return;
+  const tiempoVuelta = Date.now() - lapStart;
+  lapStart = Date.now(); lapElapsed = 0;
+  const nota = document.getElementById('nota-vuelta').value.trim();
+  document.getElementById('nota-vuelta').value = '';
+  const lap = {
+    id: 'v' + Date.now(),
+    estudioId: estudioActivo,
+    actividadId: actividadActiva,
+    tiempo: tiempoVuelta / 1000,
+    nota,
+    ts: Date.now()
+  };
+  DB.vueltas.push(lap);
+  save();
+  currentLaps = [...currentLaps, lap];
+  renderLaps();
+}
+
+function resetCrono(){
+  clearInterval(cronoInterval);
+  cronoRunning = false; cronoElapsed = 0; lapElapsed = 0;
+  document.getElementById('display-total').textContent = '00:00.00';
+  document.getElementById('display-vuelta').textContent = 'vuelta: 00:00.00';
+  const btn = document.getElementById('btn-play');
+  btn.textContent = 'Iniciar'; btn.classList.remove('btn-red'); btn.classList.add('btn-primary');
+  document.getElementById('btn-vuelta').disabled = true;
+  currentLaps = [];
+  renderLaps();
+}
+
+function renderLaps(){
+  const laps = currentLaps.slice().reverse();
+  const titulo = document.getElementById('laps-titulo');
+  titulo.textContent = `Vueltas registradas (${currentLaps.length})`;
+  const cont = document.getElementById('lista-laps');
+  if(!laps.length){ cont.innerHTML='<p style="color:var(--text3);font-size:13px;text-align:center;padding:8px 0">Sin vueltas aún.</p>'; return; }
+  const base = currentLaps[0]?.tiempo || 0;
+  cont.innerHTML = laps.map((l,i) => {
+    const n = currentLaps.length - i;
+    const delta = l.tiempo - base;
+    const dclass = delta < -0.1 ? 'delta-fast' : delta > 0.1 ? 'delta-slow' : '';
+    const dtext = Math.abs(delta) < 0.1 ? 'base' : (delta>0?'+':'')+delta.toFixed(2)+'s';
+    return `<div class="lap-row">
+      <span class="lap-n">V${n}</span>
+      <span class="lap-time">${l.tiempo.toFixed(2)}s</span>
+      <span class="lap-delta ${dclass}">${dtext}</span>
+      <span class="lap-note">${l.nota||''}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============ ESTADÍSTICAS ============
+function cargarStats(){
+  const estId = document.getElementById('sel-estudio-stats').value;
+  const cont = document.getElementById('stats-content');
+  if(!estId){ cont.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Selecciona un estudio.</p></div>'; return; }
+  const acts = DB.actividades.filter(a=>a.estudioId===estId);
+  if(!acts.length){ cont.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Sin actividades registradas.</p></div>'; return; }
+  let html = '';
+  acts.forEach(a => {
+    const vueltas = DB.vueltas.filter(v=>v.actividadId===a.id).map(v=>v.tiempo);
+    if(!vueltas.length) return;
+    const n = vueltas.length;
+    const avg = vueltas.reduce((s,v)=>s+v,0)/n;
+    const std = Math.sqrt(vueltas.reduce((s,v)=>s+(v-avg)**2,0)/Math.max(n-1,1));
+    const cv = avg > 0 ? (std/avg*100) : 0;
+    const min = Math.min(...vueltas); const max = Math.max(...vueltas);
+    const tn = avg * 1.0; // factor Westinghouse = 1 por defecto
+    const ts = tn * 1.165; // suplemento 16.5% OIT estándar
+    // Histograma simple (5 bins)
+    const range = max - min || 1;
+    const binSize = range / 5;
+    const bins = [0,0,0,0,0];
+    vueltas.forEach(v => { const b = Math.min(4, Math.floor((v-min)/binSize)); bins[b]++; });
+    const maxBin = Math.max(...bins) || 1;
+    const barH = bins.map(b => Math.round(b/maxBin*60));
+    const cols = ['#2dd4bf','#0ea5e9','#185FA5','#0ea5e9','#2dd4bf'];
+    html += `<div class="card">
+      <div class="card-title">${a.codigo} — ${a.desc}</div>
+      <div class="stat-grid" style="margin-bottom:12px">
+        <div class="stat"><div class="stat-label">Promedio</div><div class="stat-val" style="font-size:18px">${avg.toFixed(2)}s</div></div>
+        <div class="stat"><div class="stat-label">T. estándar</div><div class="stat-val" style="font-size:18px">${ts.toFixed(2)}s</div></div>
+        <div class="stat"><div class="stat-label">Desv. estándar</div><div class="stat-val" style="font-size:16px">${std.toFixed(3)}</div></div>
+        <div class="stat"><div class="stat-label">CV%</div><div class="stat-val" style="font-size:16px">${cv.toFixed(1)}%</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:4px">
+        <span>Mín: ${min.toFixed(2)}s</span><span>n = ${n}</span><span>Máx: ${max.toFixed(2)}s</span>
+      </div>
+      <div class="hist-wrap">${barH.map((h,i)=>`<div class="hist-bar" style="height:${h}px;background:${cols[i]}"></div>`).join('')}</div>
+      <div class="hist-labels">${bins.map((_,i)=>`<div class="hist-label">${(min+binSize*i).toFixed(1)}</div>`).join('')}</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text3)">
+        T. normal = promedio × Westinghouse (1.0) = ${tn.toFixed(2)}s<br>
+        T. estándar = T.normal × (1 + 16.5% supl.) = ${ts.toFixed(2)}s
+      </div>
+    </div>`;
+  });
+  cont.innerHTML = html || '<div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">Sin vueltas registradas para este estudio.</p></div>';
+}
+
+// ============ EXPORTAR ============
+function actualizarExport(){
+  const estId = document.getElementById('sel-estudio-export').value;
+  const prev = document.getElementById('export-preview');
+  if(!estId){ prev.innerHTML='<div class="card-title">Vista previa</div><p style="color:var(--text3);font-size:13px">Selecciona un estudio para ver resumen.</p>'; return; }
+  const e = DB.estudios.find(x=>x.id===estId);
+  const acts = DB.actividades.filter(a=>a.estudioId===estId).length;
+  const vueltas = DB.vueltas.filter(v=>v.estudioId===estId).length;
+  prev.innerHTML = `<div class="card-title">Vista previa</div>
+    <p style="font-size:14px;margin-bottom:6px"><strong>${e.nombre}</strong></p>
+    <p style="font-size:13px;color:var(--text2)">${e.tipo} · ${e.operario||'Sin operario'}</p>
+    <p style="font-size:13px;color:var(--text2);margin-top:4px">${acts} actividades · ${vueltas} vueltas registradas</p>`;
+}
+
+function exportarCSV(){
+  const estId = document.getElementById('sel-estudio-export').value;
+  const vueltas = estId ? DB.vueltas.filter(v=>v.estudioId===estId) : DB.vueltas;
+  if(!vueltas.length){ toast('No hay vueltas para exportar'); return; }
+  let csv = 'Estudio,Actividad,Codigo,Tipo,Tiempo_seg,Nota,Fecha,Hora\n';
+  vueltas.forEach(v => {
+    const e = DB.estudios.find(x=>x.id===v.estudioId)||{nombre:'?'};
+    const a = DB.actividades.find(x=>x.id===v.actividadId)||{desc:'?',codigo:'?',tipo:'?'};
+    const d = new Date(v.ts);
+    csv += `"${e.nombre}","${a.desc}","${a.codigo}","${a.tipo}",${v.tiempo.toFixed(3)},"${v.nota||''}","${d.toLocaleDateString('es-CO')}","${d.toLocaleTimeString('es-CO')}"\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const e = DB.estudios.find(x=>x.id===estId);
+  descargar(blob, (e?e.nombre:'TimeMaster')+'_'+new Date().toISOString().slice(0,10)+'.csv');
+  toast('CSV exportado — abre con Excel');
+}
+
+function exportarJSON(){
+  const blob = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  descargar(blob,'TimeMaster_backup_'+new Date().toISOString().slice(0,10)+'.json');
+  toast('Respaldo JSON exportado');
+}
+
+function descargar(blob, nombre){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importarJSON(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.estudios && data.actividades && data.vueltas) {
+        DB = data; save();
+        renderInicio(); syncEstudioSelects();
+        toast('Datos importados correctamente');
+      } else { toast('Archivo no válido'); }
+    } catch(err){ toast('Error al leer el archivo'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ============ INIT ============
+renderInicio();
+syncEstudioSelects();
+if(estudioActivo) {
+  syncActividadSelect();
+  currentLaps = DB.vueltas.filter(v=>v.estudioId===estudioActivo);
+  const e = DB.estudios.find(x=>x.id===estudioActivo);
+  if(e) document.getElementById('top-badge').textContent = e.nombre.substring(0,12);
+}
+</script>
+</body>
+</html>
