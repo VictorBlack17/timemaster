@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1923">
+<title>TimeMaster OPAV</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f1923;--bg2:#16202e;--bg3:#1d2d3f;--bg4:#243347;--accent:#2dd4bf;--accent2:#0ea5e9;--amber:#f59e0b;--text:#e8edf2;--text2:#8fa3b8;--text3:#526070;--green:#10b981;--red:#ef4444;--purple:#a78bfa;--r:12px;--r2:8px}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative}
+.top-bar{background:var(--bg2);border-bottom:1px solid var(--bg3);padding:10px 14px;display:flex;align-items:center;gap:8px;min-height:52px;flex-shrink:0}
+.top-bar h1{font-size:15px;font-weight:600;flex:1;letter-spacing:-.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{background:var(--bg3);font-size:11px;padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace;white-space:nowrap}
+.badge-green{background:#10b98122;color:#10b981}
+.badge-amber{background:#f59e0b22;color:#f59e0b}
+.badge-blue{background:#0ea5e922;color:#0ea5e9}
+.badge-purple{background:#a78bfa22;color:#a78bfa}
+.btn-icon{width:32px;height:32px;border-radius:var(--r2);border:1px solid var(--bg3);background:var(--bg3);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0}
+.btn-icon:active{transform:scale(.93)}
+.bottom-nav{background:var(--bg2);border-top:1px solid var(--bg3);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 0 7px;cursor:pointer;border:none;background:transparent;gap:2px;transition:color .15s}
+.bn span{font-size:10px;color:var(--text3)}
+.bn svg{transition:color .15s}
+.bn.active svg,.bn.active span{color:var(--accent)}
+.bn:not(.active) svg{color:var(--text3)}
+.screen{flex:1;overflow-y:auto;padding:12px;display:none;flex-direction:column;gap:10px}
+.screen.active{display:flex}
+.card{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--r);padding:13px}
+.card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stat{background:var(--bg3);border-radius:var(--r2);padding:11px}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:3px}
+.stat-val{font-size:20px;font-weight:600;font-family:'DM Mono',monospace}
+.input{width:100%;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r2);padding:8px 11px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border .15s}
+.input:focus{border-color:var(--accent)}
+select.input option{background:var(--bg2)}
+textarea.input{resize:none}
+.label{font-size:12px;color:var(--text2);margin-bottom:4px}
+.field{margin-bottom:9px}
+.btn{border:1px solid var(--bg4);background:var(--bg3);color:var(--text);border-radius:var(--r2);padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#0a1a20;font-weight:600}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+.btn-red{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+.btn-amber{background:var(--amber);border-color:var(--amber);color:#0f1923;font-weight:600}
+.btn-full{width:100%}
+.row{display:flex;gap:7px;align-items:center}
+.flex1{flex:1}
+/* MACRO CARDS */
+.macro-card{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--r);padding:13px;margin-bottom:8px;cursor:pointer;transition:border .15s}
+.macro-card:active{border-color:var(--accent)}
+.macro-header{display:flex;align-items:flex-start;gap:10px}
+.macro-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.macro-info{flex:1;min-width:0}
+.macro-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.macro-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.macro-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500}
+/* OPERACIONES */
+.op-row{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--bg2);border-radius:var(--r2);margin-bottom:5px;cursor:pointer;border:1px solid transparent;transition:border .15s}
+.op-row.active-op{border-color:var(--accent)}
+.op-seq{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:24px}
+.op-info{flex:1;min-width:0}
+.op-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.op-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);text-align:right;min-width:48px}
+.op-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* CRONÓMETRO */
+.chro-wrap{background:var(--bg2);border:1px solid var(--bg3);border-radius:20px;padding:20px 14px;text-align:center}
+.chro-time{font-family:'DM Mono',monospace;font-size:48px;font-weight:500;color:var(--text);letter-spacing:2px;line-height:1}
+.chro-lap{font-family:'DM Mono',monospace;font-size:16px;color:var(--accent);margin-top:5px}
+.chro-meta{font-size:12px;color:var(--text2);margin-top:6px}
+.chro-btns{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.chro-btns .btn{min-width:80px;padding:10px 0}
+/* LAPS */
+.lap-row{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg2);border-radius:var(--r2);font-size:12px;margin-bottom:4px}
+.lap-n{color:var(--text3);font-family:'DM Mono',monospace;min-width:26px}
+.lap-time{font-family:'DM Mono',monospace;font-weight:500;flex:1}
+.lap-ritmo{width:42px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--amber)}
+.lap-tnorm{font-family:'DM Mono',monospace;font-size:11px;color:var(--green);width:48px;text-align:right}
+.lap-note{font-size:11px;color:var(--text3);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* VARIABLES */
+.var-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg3);border-radius:var(--r2);margin-bottom:5px}
+.var-name{flex:1;font-size:13px;font-weight:500}
+.var-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--accent);min-width:72px;text-align:right}
+.var-unit{font-size:11px;color:var(--text3);min-width:28px;text-align:left}
+/* MODAL */
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:20;border-radius:inherit}
+.overlay.open{display:flex}
+.sheet{background:var(--bg2);border-radius:20px 20px 0 0;padding:15px;width:100%;border-top:1px solid var(--bg3);max-height:88vh;overflow-y:auto}
+.sheet-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 13px}
+.sheet-title{font-size:16px;font-weight:600;margin-bottom:13px}
+/* TOAST */
+.toast{position:absolute;bottom:68px;left:50%;transform:translateX(-50%);background:var(--bg4);color:var(--text);padding:8px 16px;border-radius:20px;font-size:12px;white-space:nowrap;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+/* HIST */
+.hist-wrap{display:flex;align-items:flex-end;gap:3px;height:60px;margin-top:6px}
+.hist-bar{flex:1;border-radius:3px 3px 0 0;min-width:0}
+.hist-labels{display:flex;gap:3px;margin-top:3px}
+.hist-label{flex:1;font-size:10px;color:var(--text3);text-align:center}
+/* SECTION LABELS */
+.section-lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin:8px 0 5px}
+/* RITMO INPUT */
+.ritmo-input{width:56px;background:var(--bg3);border:1px solid var(--bg4);border-radius:6px;padding:5px 7px;font-size:13px;color:var(--amber);font-family:'DM Mono',monospace;text-align:center;outline:none}
+.ritmo-input:focus{border-color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top-bar">
+    <h1 id="top-title">TimeMaster OPAV</h1>
+    <span class="badge" id="top-badge">Planta 109</span>
+    <button class="btn-icon" onclick="openModal('modal-nueva-macro')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+
+  <!-- SCREEN: INICIO -->
+  <div class="screen active" id="s-inicio">
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Macroactividades</div><div class="stat-val" id="cnt-macros">0</div></div>
+      <div class="stat"><div class="stat-label">Total muestras</div><div class="stat-val" id="cnt-muestras">0</div></div>
+      <div class="stat"><div class="stat-label">De tiempos</div><div class="stat-val" id="cnt-tiempos">0</div></div>
+      <div class="stat"><div class="stat-label">De variables</div><div class="stat-val" id="cnt-vars">0</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Macroactividades</div>
+      <div id="lista-macros"><p style="color:var(--text3);font-size:13px;text-align:center;padding:14px 0">Toca + para crear una macroactividad.</p></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: MEDIR (cronómetro + operaciones) -->
+  <div class="screen" id="s-medir">
+    <div id="medir-content"><p style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">Abre una macroactividad de tiempos.</p></div>
+  </div>
+
+  <!-- SCREEN: VARIABLES (temp/pesos) -->
+  <div class="screen" id="s-variables">
+    <div id="vars-content"><p style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">Abre una macroactividad de variables.</p></div>
+  </div>
+
+  <!-- SCREEN: ESTADÍSTICAS -->
+  <div class="screen" id="s-stats">
+    <div class="row" style="margin-bottom:2px">
+      <select class="input flex1" id="sel-stats-macro" onchange="renderStats()"><option value="">— Seleccionar macroactividad —</option></select>
+    </div>
+    <div id="stats-content"><div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:14px 0">Selecciona una macroactividad.</p></div></div>
+  </div>
+
+  <!-- SCREEN: EXPORTAR -->
+  <div class="screen" id="s-export">
+    <div class="card">
+      <div class="card-title">Seleccionar macroactividad</div>
+      <select class="input" id="sel-export-macro"><option value="">— Todas —</option></select>
+    </div>
+    <div class="card">
+      <div class="card-title">Exportar</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-green btn-full" onclick="exportCSV()">Exportar CSV (Excel)</button>
+        <button class="btn btn-full" onclick="exportJSON()">Respaldo JSON completo</button>
+        <label class="btn btn-full" style="text-align:center;cursor:pointer">Importar JSON
+          <input type="file" accept=".json" style="display:none" onchange="importJSON(this)">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bn active" onclick="ir('inicio')" id="bn-inicio">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span>Inicio</span>
+    </button>
+    <button class="bn" onclick="ir('medir')" id="bn-medir">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Tiempos</span>
+    </button>
+    <button class="bn" onclick="ir('variables')" id="bn-variables">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h18v18H3z" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+      <span>Variables</span>
+    </button>
+    <button class="bn" onclick="ir('stats')" id="bn-stats">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Stats</span>
+    </button>
+    <button class="bn" onclick="ir('export')" id="bn-export">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Exportar</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: Nueva macroactividad -->
+  <div class="overlay" id="modal-nueva-macro">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Nueva macroactividad</div>
+      <div class="field"><div class="label">Nombre</div><input class="input" id="nm-nombre" placeholder="ej: EMPAQUE POLLO ENTERO Ref.4"></div>
+      <div class="field"><div class="label">Tipo</div>
+        <select class="input" id="nm-tipo" onchange="toggleTipoFields()">
+          <option value="tiempos">Tiempos — Métodos y tiempos / OIT</option>
+          <option value="variables">Variables — Temperaturas, pesos, rendimiento</option>
+        </select>
+      </div>
+      <div id="nm-campos-tiempos">
+        <div class="row" style="margin-bottom:9px">
+          <div class="flex1"><div class="label">Referencia</div><input class="input" id="nm-ref" placeholder="41021021"></div>
+          <div class="flex1"><div class="label">Planta</div>
+            <select class="input" id="nm-planta">
+              <option>PEREIRA</option><option>CALDAS</option><option>BUCARAMANGA</option><option>COPACABANA</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><div class="label">Descripción del producto</div><input class="input" id="nm-desc" placeholder="ej: POLLO S.V. 1.4 - 1.5 GNEL REF No.4"></div>
+        <div class="row" style="margin-bottom:9px">
+          <div class="flex1"><div class="label">Suplemento OIT (%)</div><input class="input" id="nm-supl" type="number" value="20" min="0" max="100"></div>
+          <div class="flex1"><div class="label">Operario / Zona</div><input class="input" id="nm-zona" placeholder="EMPAQUE POLLO ENTERO"></div>
+        </div>
+      </div>
+      <div id="nm-campos-variables" style="display:none">
+        <div class="field"><div class="label">Punto / Área</div><input class="input" id="nm-punto" placeholder="ej: Línea Chiller, Túnel 5"></div>
+        <div class="section-lbl">Variables a medir</div>
+        <div id="nm-vars-list"></div>
+        <button class="btn btn-full" onclick="addVarField()" style="margin-bottom:9px">+ Agregar variable</button>
+      </div>
+      <div class="section-lbl">Operaciones / Actividades</div>
+      <div id="nm-ops-list"></div>
+      <button class="btn btn-full" id="btn-add-op" onclick="addOpField()" style="margin-bottom:12px">+ Agregar operación</button>
+      <div class="row">
+        <button class="btn flex1" onclick="closeModal('modal-nueva-macro')">Cancelar</button>
+        <button class="btn btn-primary flex1" onclick="crearMacro()">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Registro de vuelta (con ritmo) -->
+  <div class="overlay" id="modal-vuelta">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="mv-title">Registrar vuelta</div>
+      <div class="row" style="margin-bottom:10px;align-items:flex-start">
+        <div class="flex1">
+          <div class="label">T. observado (s)</div>
+          <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:var(--accent)" id="mv-tiempo">0.00</div>
+        </div>
+        <div>
+          <div class="label">Ritmo (%)</div>
+          <input class="ritmo-input" id="mv-ritmo" type="number" value="100" min="50" max="150">
+        </div>
+      </div>
+      <div id="mv-pesos-wrap" style="display:none">
+        <div class="section-lbl">Peso entrada (kg)</div>
+        <input class="input" id="mv-pe" type="number" step="0.001" placeholder="0.000" style="margin-bottom:8px">
+        <div class="section-lbl">Peso salida (kg)</div>
+        <input class="input" id="mv-ps" type="number" step="0.001" placeholder="0.000" style="margin-bottom:8px">
+      </div>
+      <div class="field"><div class="label">Nota / Observación</div><input class="input" id="mv-nota" placeholder="Opcional..."></div>
+      <div class="row">
+        <button class="btn flex1" onclick="closeModal('modal-vuelta')">Cancelar</button>
+        <button class="btn btn-primary flex1" onclick="guardarVuelta()">Guardar vuelta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Registro de variable -->
+  <div class="overlay" id="modal-var-registro">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Nuevo registro</div>
+      <div id="mvr-campos"></div>
+      <div class="field"><div class="label">Lote / Referencia</div><input class="input" id="mvr-lote" placeholder="Número de lote o referencia"></div>
+      <div class="field"><div class="label">Observación</div><textarea class="input" id="mvr-nota" rows="2" placeholder="Observaciones..."></textarea></div>
+      <div class="row">
+        <button class="btn flex1" onclick="closeModal('modal-var-registro')">Cancelar</button>
+        <button class="btn btn-primary flex1" onclick="guardarVarRegistro()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ===== DB =====
+let DB = JSON.parse(localStorage.getItem('tm_opav') || '{"macros":[],"muestras":[],"var_registros":[]}');
+function save(){ localStorage.setItem('tm_opav', JSON.stringify(DB)); }
+
+// ===== NAV =====
+function ir(s){
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.bn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('s-'+s).classList.add('active');
+  document.getElementById('bn-'+s).classList.add('active');
+  const titles={inicio:'TimeMaster OPAV',medir:'Muestreo de Tiempos',variables:'Variables',stats:'Estadísticas',export:'Exportar'};
+  document.getElementById('top-title').textContent = titles[s]||s;
+  if(s==='inicio') renderInicio();
+  if(s==='stats') syncMacroSelects();
+  if(s==='export') syncMacroSelects();
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+// ===== RENDER INICIO =====
+function renderInicio(){
+  const macros = DB.macros;
+  document.getElementById('cnt-macros').textContent = macros.length;
+  document.getElementById('cnt-muestras').textContent = DB.muestras.length;
+  document.getElementById('cnt-tiempos').textContent = macros.filter(m=>m.tipo==='tiempos').length;
+  document.getElementById('cnt-vars').textContent = macros.filter(m=>m.tipo==='variables').length;
+  const cont = document.getElementById('lista-macros');
+  if(!macros.length){ cont.innerHTML='<p style="color:var(--text3);font-size:13px;text-align:center;padding:14px 0">Toca + para crear una macroactividad.</p>'; return; }
+  const iconos = {tiempos:'#2dd4bf', variables:'#f59e0b'};
+  cont.innerHTML = macros.map(m => {
+    const ops = m.operaciones||[];
+    const muestras = DB.muestras.filter(x=>x.macroId===m.id).length;
+    const vreg = DB.var_registros.filter(x=>x.macroId===m.id).length;
+    const total = muestras + vreg;
+    const color = iconos[m.tipo]||'#888';
+    const badgeTipo = m.tipo==='tiempos'
+      ? `<span class="tag badge-green">Tiempos</span>`
+      : `<span class="tag badge-amber">Variables</span>`;
+    return `<div class="macro-card" onclick="abrirMacro('${m.id}')">
+      <div class="macro-header">
+        <div class="macro-icon" style="background:${color}22">
+          ${m.tipo==='tiempos'
+            ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+            : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`}
+        </div>
+        <div class="macro-info">
+          <div class="macro-name">${m.nombre}</div>
+          <div class="macro-sub">${m.planta||m.punto||''} · ${ops.length} ops · ${total} registros · ${m.fecha}</div>
+          <div class="macro-tags">${badgeTipo}
+            ${m.referencia?`<span class="tag badge-blue">${m.referencia}</span>`:''}
+          </div>
+        </div>
+        <button class="btn" style="padding:5px 10px;font-size:12px">Abrir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== NUEVA MACRO =====
+let nmOpsCount = 0, nmVarsCount = 0;
+function toggleTipoFields(){
+  const t = document.getElementById('nm-tipo').value;
+  document.getElementById('nm-campos-tiempos').style.display = t==='tiempos' ? '' : 'none';
+  document.getElementById('nm-campos-variables').style.display = t==='variables' ? '' : 'none';
+  document.getElementById('btn-add-op').textContent = t==='variables' ? '+ Agregar punto de medición' : '+ Agregar operación';
+}
+function addOpField(){
+  nmOpsCount++;
+  const tipo = document.getElementById('nm-tipo').value;
+  const div = document.createElement('div');
+  div.style = 'background:var(--bg3);border-radius:var(--r2);padding:10px;margin-bottom:7px';
+  div.innerHTML = `<div class="row" style="margin-bottom:6px">
+    <input class="input flex1" placeholder="Código (ej: EVS-01)" style="font-size:12px" data-op="cod">
+    <select class="input" style="width:80px;font-size:12px" data-op="tipo">
+      <option value="M">M ✋</option><option value="A">A ⚙</option><option value="C">C ◆</option>
+    </select>
+    <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+  </div>
+  <input class="input" placeholder="Descripción de la operación" style="font-size:12px;margin-bottom:5px" data-op="desc">
+  ${tipo==='tiempos'?`<div class="row"><input class="input flex1" placeholder="Zona" style="font-size:12px" data-op="zona"><input class="input flex1" placeholder="Equipo / Máquina" style="font-size:12px" data-op="equipo"></div>`:''}`;
+  document.getElementById('nm-ops-list').appendChild(div);
+}
+function addVarField(){
+  const div = document.createElement('div');
+  div.style = 'display:flex;gap:6px;margin-bottom:6px';
+  div.innerHTML = `<input class="input flex1" placeholder="Variable (ej: Temp. chiller)" style="font-size:12px" data-vf="nombre">
+    <input class="input" style="width:60px;font-size:12px" placeholder="°C" data-vf="unidad">
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px">×</button>`;
+  document.getElementById('nm-vars-list').appendChild(div);
+}
+function crearMacro(){
+  const nombre = document.getElementById('nm-nombre').value.trim();
+  if(!nombre){ toast('Escribe un nombre'); return; }
+  const tipo = document.getElementById('nm-tipo').value;
+  // Recopilar operaciones
+  const opRows = document.querySelectorAll('#nm-ops-list > div');
+  const ops = [];
+  opRows.forEach((row,i) => {
+    const cod = row.querySelector('[data-op="cod"]')?.value.trim();
+    const desc = row.querySelector('[data-op="desc"]')?.value.trim();
+    if(desc) ops.push({
+      id:'op'+Date.now()+i, seq:i+1,
+      cod: cod||`Op${i+1}`,
+      desc,
+      tipoOp: row.querySelector('[data-op="tipo"]')?.value||'M',
+      zona: row.querySelector('[data-op="zona"]')?.value.trim()||'',
+      equipo: row.querySelector('[data-op="equipo"]')?.value.trim()||'MANUAL',
+    });
+  });
+  // Recopilar variables (si aplica)
+  const varFields = document.querySelectorAll('#nm-vars-list > div');
+  const variables = [];
+  varFields.forEach((row,i) => {
+    const nombre2 = row.querySelector('[data-vf="nombre"]')?.value.trim();
+    const unidad = row.querySelector('[data-vf="unidad"]')?.value.trim();
+    if(nombre2) variables.push({id:'vr'+Date.now()+i, nombre:nombre2, unidad:unidad||''});
+  });
+  const macro = {
+    id:'m'+Date.now(), nombre, tipo,
+    referencia: document.getElementById('nm-ref')?.value.trim()||'',
+    planta: document.getElementById('nm-planta')?.value||'PEREIRA',
+    desc: document.getElementById('nm-desc')?.value.trim()||'',
+    supl: parseFloat(document.getElementById('nm-supl')?.value||'20')/100,
+    zona: document.getElementById('nm-zona')?.value.trim()||'',
+    punto: document.getElementById('nm-punto')?.value.trim()||'',
+    operaciones: ops,
+    variables,
+    fecha: new Date().toLocaleDateString('es-CO'),
+    ts: Date.now()
+  };
+  DB.macros.push(macro);
+  save();
+  closeModal('modal-nueva-macro');
+  // Limpiar
+  ['nm-nombre','nm-ref','nm-desc','nm-zona','nm-punto'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('nm-ops-list').innerHTML='';
+  document.getElementById('nm-vars-list').innerHTML='';
+  document.getElementById('nm-supl').value='20';
+  toast('Macroactividad creada');
+  renderInicio();
+  syncMacroSelects();
+}
+
+// ===== ABRIR MACRO =====
+let macroActiva = null, opActiva = null;
+let cronoRunning=false,cronoStart=0,cronoElapsed=0,lapStart=0,lapElapsed=0,cronoInterval=null;
+let tiempoCapturado=0;
+
+function abrirMacro(id){
+  const m = DB.macros.find(x=>x.id===id);
+  if(!m){ toast('Macro no encontrada'); return; }
+  macroActiva = m;
+  opActiva = m.operaciones?.[0]||null;
+  document.getElementById('top-badge').textContent = m.planta||m.punto||'';
+  if(m.tipo==='tiempos'){ renderMedir(); ir('medir'); }
+  else { renderVariables(); ir('variables'); }
+}
+
+// ===== PANTALLA TIEMPOS =====
+function renderMedir(){
+  const m = macroActiva;
+  if(!m||m.tipo!=='tiempos'){ document.getElementById('medir-content').innerHTML='<p style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">Abre una macroactividad de tiempos.</p>'; return; }
+  const ops = m.operaciones||[];
+  const opHtml = ops.map(op=>{
+    const muestras = DB.muestras.filter(x=>x.macroId===m.id && x.opId===op.id);
+    const avg = muestras.length ? (muestras.reduce((s,x)=>s+x.t_obs,0)/muestras.length).toFixed(1) : '—';
+    const isActive = opActiva && opActiva.id===op.id;
+    const colors={M:'#2dd4bf',A:'#0ea5e9',C:'#a78bfa'};
+    return `<div class="op-row ${isActive?'active-op':''}" onclick="selectOp('${op.id}')">
+      <span class="op-seq">${op.seq}</span>
+      <div class="op-status" style="background:${colors[op.tipoOp]||'#888'}"></div>
+      <div class="op-info">
+        <div class="op-name">${op.cod} — ${op.desc}</div>
+        <div class="op-sub">${op.tipoOp} · ${op.zona||''} · n=${muestras.length}</div>
+      </div>
+      <div class="op-time">${avg==='—'?'—':avg+'s'}</div>
+    </div>`;
+  }).join('');
+  const opActDesc = opActiva ? `${opActiva.cod} — ${opActiva.desc}` : 'Selecciona una operación';
+  const muestrasOp = opActiva ? DB.muestras.filter(x=>x.macroId===m.id&&x.opId===opActiva.id) : [];
+  const lapsHtml = muestrasOp.length
+    ? [...muestrasOp].reverse().map((mu,i)=>{
+        const n = muestrasOp.length-i;
+        const tnorm = (mu.t_obs*(mu.ritmo/100)).toFixed(2);
+        return `<div class="lap-row"><span class="lap-n">T${n}</span><span class="lap-time">${mu.t_obs.toFixed(2)}s</span><span class="lap-ritmo">${mu.ritmo}%</span><span class="lap-tnorm">${tnorm}s</span><span class="lap-note">${mu.nota||''}</span></div>`;
+      }).join('')
+    : '<p style="color:var(--text3);font-size:12px;text-align:center;padding:6px 0">Sin muestras aún.</p>';
+
+  document.getElementById('medir-content').innerHTML = `
+    <div class="card" style="margin-bottom:2px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:500">${m.nombre}</span>
+        <span class="badge badge-green">${m.referencia||''}</span>
+      </div>
+      <div class="chro-wrap">
+        <div class="chro-time" id="chro-display">00:00.00</div>
+        <div class="chro-lap" id="chro-lap">vuelta: 00:00.00</div>
+        <div class="chro-meta" id="chro-meta">${opActDesc}</div>
+        <div class="chro-btns">
+          <button class="btn" id="btn-vuelta" onclick="capturarVuelta()" disabled>Capturar</button>
+          <button class="btn btn-primary" id="btn-play" onclick="toggleCrono()">Iniciar</button>
+          <button class="btn" onclick="resetCrono()">Reset</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Operaciones (${ops.length})</div>
+      ${opHtml}
+    </div>
+    <div class="card">
+      <div class="card-title" id="laps-title">Muestras operación activa (${muestrasOp.length})</div>
+      <div id="lista-laps">${lapsHtml}</div>
+    </div>`;
+  // Re-attach crono state
+  document.getElementById('chro-display').textContent = fmtMs(cronoElapsed);
+  document.getElementById('chro-lap').textContent = 'vuelta: '+fmtMs(lapElapsed);
+  if(cronoRunning){
+    const btn=document.getElementById('btn-play');
+    btn.textContent='Pausar'; btn.classList.remove('btn-primary'); btn.classList.add('btn-red');
+    document.getElementById('btn-vuelta').disabled=false;
+  }
+}
+
+function selectOp(opId){
+  if(!macroActiva) return;
+  opActiva = macroActiva.operaciones.find(x=>x.id===opId)||null;
+  renderMedir();
+}
+
+// ===== CRONÓMETRO =====
+function pad(n,d=2){return String(Math.floor(n)).padStart(d,'0');}
+function fmtMs(ms){const cs=Math.floor(ms/10)%100,s=Math.floor(ms/1000)%60,mn=Math.floor(ms/60000);return pad(mn)+':'+pad(s)+'.'+pad(cs);}
+function toggleCrono(){
+  const btn=document.getElementById('btn-play'); if(!btn) return;
+  const lapBtn=document.getElementById('btn-vuelta');
+  if(!cronoRunning){
+    cronoStart=Date.now()-cronoElapsed; lapStart=Date.now()-lapElapsed;
+    cronoRunning=true; btn.textContent='Pausar'; btn.classList.remove('btn-primary'); btn.classList.add('btn-red');
+    if(lapBtn) lapBtn.disabled=false;
+    cronoInterval=setInterval(tickCrono,23);
+  } else {
+    clearInterval(cronoInterval); cronoRunning=false;
+    btn.textContent='Reanudar'; btn.classList.remove('btn-red'); btn.classList.add('btn-primary');
+  }
+}
+function tickCrono(){
+  cronoElapsed=Date.now()-cronoStart; lapElapsed=Date.now()-lapStart;
+  const d=document.getElementById('chro-display'); if(d) d.textContent=fmtMs(cronoElapsed);
+  const l=document.getElementById('chro-lap'); if(l) l.textContent='vuelta: '+fmtMs(lapElapsed);
+}
+function resetCrono(){
+  clearInterval(cronoInterval); cronoRunning=false; cronoElapsed=0; lapElapsed=0;
+  const btn=document.getElementById('btn-play');
+  if(btn){btn.textContent='Iniciar';btn.classList.remove('btn-red');btn.classList.add('btn-primary');}
+  const lapBtn=document.getElementById('btn-vuelta'); if(lapBtn) lapBtn.disabled=true;
+  const d=document.getElementById('chro-display'); if(d) d.textContent='00:00.00';
+  const l=document.getElementById('chro-lap'); if(l) l.textContent='vuelta: 00:00.00';
+}
+function capturarVuelta(){
+  if(!opActiva){ toast('Selecciona una operación primero'); return; }
+  tiempoCapturado = lapElapsed/1000;
+  lapStart=Date.now(); lapElapsed=0;
+  document.getElementById('mv-tiempo').textContent = tiempoCapturado.toFixed(2);
+  document.getElementById('mv-title').textContent = opActiva.cod+' — Registrar muestra';
+  document.getElementById('mv-ritmo').value = '100';
+  document.getElementById('mv-nota').value = '';
+  document.getElementById('mv-pesos-wrap').style.display = '';
+  openModal('modal-vuelta');
+}
+function guardarVuelta(){
+  if(!macroActiva||!opActiva) return;
+  const ritmo = parseFloat(document.getElementById('mv-ritmo').value)||100;
+  const pe = parseFloat(document.getElementById('mv-pe').value)||null;
+  const ps = parseFloat(document.getElementById('mv-ps').value)||null;
+  const t_obs = tiempoCapturado;
+  const t_norm = t_obs*(ritmo/100);
+  const t_std = t_norm*(1+macroActiva.supl);
+  const muestra = {
+    id:'mu'+Date.now(), macroId:macroActiva.id, opId:opActiva.id,
+    t_obs: Math.round(t_obs*100)/100,
+    ritmo,
+    t_norm: Math.round(t_norm*100)/100,
+    t_std: Math.round(t_std*100)/100,
+    pe, ps,
+    rendimiento: (pe&&ps&&pe>0) ? Math.round(ps/pe*10000)/100 : null,
+    nota: document.getElementById('mv-nota').value.trim(),
+    ts: Date.now()
+  };
+  DB.muestras.push(muestra);
+  save();
+  closeModal('modal-vuelta');
+  renderMedir();
+  toast(`T${DB.muestras.filter(x=>x.macroId===macroActiva.id&&x.opId===opActiva.id).length} → ${t_obs.toFixed(2)}s | T.std=${t_std.toFixed(2)}s`);
+}
+
+// ===== PANTALLA VARIABLES =====
+function renderVariables(){
+  const m = macroActiva;
+  if(!m||m.tipo!=='variables'){ document.getElementById('vars-content').innerHTML='<p style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">Abre una macroactividad de variables.</p>'; return; }
+  const regs = DB.var_registros.filter(x=>x.macroId===m.id);
+  const ops = m.operaciones||[];
+  const vars = m.variables||[];
+  // Últimos valores por variable
+  const ultimosHtml = vars.map(v=>{
+    const vals = regs.map(r=>r.valores?.[v.id]).filter(x=>x!=null);
+    const ultimo = vals.length ? vals[vals.length-1] : null;
+    const avg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : '—';
+    return `<div class="var-row">
+      <span class="var-name">${v.nombre}</span>
+      <span class="var-val">${ultimo!=null?ultimo.toFixed(2):'—'}</span>
+      <span class="var-unit">${v.unidad}</span>
+    </div>`;
+  }).join('');
+  const opsHtml = ops.map(op=>{
+    const opRegs = regs.filter(x=>x.opId===op.id);
+    return `<div class="op-row" style="cursor:default">
+      <span class="op-seq">${op.seq}</span>
+      <div class="op-info"><div class="op-name">${op.cod} — ${op.desc}</div><div class="op-sub">n=${opRegs.length}</div></div>
+    </div>`;
+  }).join('');
+  const historial = regs.length
+    ? [...regs].reverse().slice(0,10).map(r=>{
+        const d=new Date(r.ts);
+        const valsStr=vars.map(v=>v.nombre.substring(0,6)+': '+(r.valores?.[v.id]!=null?r.valores[v.id].toFixed(1):'—')+v.unidad).join(' | ');
+        return `<div style="padding:8px 10px;background:var(--bg3);border-radius:var(--r2);margin-bottom:4px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${d.toLocaleDateString('es-CO')} ${d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})} · ${r.lote||''}</div>
+          <div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--accent)">${valsStr}</div>
+          ${r.nota?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${r.nota}</div>`:''}
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--text3);font-size:12px;text-align:center;padding:6px 0">Sin registros aún.</p>';
+
+  document.getElementById('vars-content').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:500">${m.nombre}</span>
+        <button class="btn btn-amber" style="padding:6px 12px;font-size:12px" onclick="openVarRegistro()">+ Registrar</button>
+      </div>
+      ${vars.length?`<div class="section-lbl">Últimos valores</div>${ultimosHtml}`:'<p style="color:var(--text3);font-size:12px">Sin variables definidas.</p>'}
+    </div>
+    ${ops.length?`<div class="card"><div class="card-title">Puntos / Operaciones</div>${opsHtml}</div>`:''}
+    <div class="card"><div class="card-title">Historial (${regs.length})</div>${historial}</div>`;
+}
+
+function openVarRegistro(){
+  if(!macroActiva||macroActiva.tipo!=='variables') return;
+  const vars = macroActiva.variables||[];
+  document.getElementById('mvr-campos').innerHTML = vars.map(v=>`
+    <div class="field"><div class="label">${v.nombre} (${v.unidad})</div>
+    <input class="input" type="number" step="0.01" id="mvr-${v.id}" placeholder="0.00"></div>`).join('');
+  document.getElementById('mvr-lote').value='';
+  document.getElementById('mvr-nota').value='';
+  openModal('modal-var-registro');
+}
+function guardarVarRegistro(){
+  if(!macroActiva) return;
+  const vars = macroActiva.variables||[];
+  const valores={};
+  vars.forEach(v=>{
+    const val=parseFloat(document.getElementById('mvr-'+v.id)?.value);
+    if(!isNaN(val)) valores[v.id]=val;
+  });
+  const reg={
+    id:'vr'+Date.now(), macroId:macroActiva.id,
+    opId: macroActiva.operaciones?.[0]?.id||null,
+    valores, lote:document.getElementById('mvr-lote').value.trim(),
+    nota:document.getElementById('mvr-nota').value.trim(), ts:Date.now()
+  };
+  DB.var_registros.push(reg);
+  save(); closeModal('modal-var-registro'); renderVariables();
+  toast('Registro guardado');
+}
+
+// ===== ESTADÍSTICAS =====
+function syncMacroSelects(){
+  ['sel-stats-macro','sel-export-macro'].forEach(id=>{
+    const sel=document.getElementById(id); if(!sel) return;
+    sel.innerHTML='<option value="">— Todas —</option>'+DB.macros.map(m=>`<option value="${m.id}">${m.nombre}</option>`).join('');
+  });
+}
+function renderStats(){
+  const macroId=document.getElementById('sel-stats-macro').value;
+  const cont=document.getElementById('stats-content');
+  const macros=macroId ? DB.macros.filter(x=>x.id===macroId) : DB.macros;
+  if(!macros.length){ cont.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:14px 0">Sin datos.</p></div>'; return; }
+  let html='';
+  macros.forEach(m=>{
+    if(m.tipo==='tiempos'){
+      const ops=m.operaciones||[];
+      html+=`<div class="card"><div style="font-size:14px;font-weight:500;margin-bottom:10px">${m.nombre}</div>`;
+      ops.forEach(op=>{
+        const ms=DB.muestras.filter(x=>x.macroId===m.id&&x.opId===op.id);
+        if(!ms.length) return;
+        const tobs=ms.map(x=>x.t_obs);
+        const n=tobs.length,avg=tobs.reduce((a,b)=>a+b,0)/n;
+        const std=Math.sqrt(tobs.reduce((s,v)=>s+(v-avg)**2,0)/Math.max(n-1,1));
+        const cv=avg>0?(std/avg*100):0;
+        const tnorm=avg*(ms.reduce((a,x)=>a+x.ritmo,0)/n/100);
+        const tstd=tnorm*(1+m.supl);
+        const pesos=ms.filter(x=>x.pe&&x.ps);
+        const rendAvg=pesos.length?(pesos.reduce((a,x)=>a+x.rendimiento,0)/pesos.length).toFixed(1):'—';
+        html+=`<div style="border-top:1px solid var(--bg3);padding-top:9px;margin-top:9px">
+          <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:7px">${op.cod} — ${op.desc} (n=${n})</div>
+          <div class="stat-grid" style="gap:6px">
+            <div class="stat" style="padding:8px"><div class="stat-label">T.Observado</div><div class="stat-val" style="font-size:16px">${avg.toFixed(2)}s</div></div>
+            <div class="stat" style="padding:8px"><div class="stat-label">T.Estándar</div><div class="stat-val" style="font-size:16px;color:var(--accent)">${tstd.toFixed(2)}s</div></div>
+            <div class="stat" style="padding:8px"><div class="stat-label">Desv. std</div><div class="stat-val" style="font-size:16px">${std.toFixed(3)}</div></div>
+            <div class="stat" style="padding:8px"><div class="stat-label">CV%</div><div class="stat-val" style="font-size:16px">${cv.toFixed(1)}%</div></div>
+          </div>
+          ${pesos.length?`<div style="font-size:12px;color:var(--text3);margin-top:6px">Rendimiento promedio: <span style="color:var(--green)">${rendAvg}%</span></div>`:''}
+        </div>`;
+      });
+      html+='</div>';
+    } else {
+      const vars=m.variables||[];
+      const regs=DB.var_registros.filter(x=>x.macroId===m.id);
+      html+=`<div class="card"><div style="font-size:14px;font-weight:500;margin-bottom:10px">${m.nombre} (n=${regs.length})</div>`;
+      vars.forEach(v=>{
+        const vals=regs.map(r=>r.valores?.[v.id]).filter(x=>x!=null);
+        if(!vals.length) return;
+        const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+        const mn=Math.min(...vals),mx=Math.max(...vals);
+        const std=Math.sqrt(vals.reduce((s,x)=>s+(x-avg)**2,0)/Math.max(vals.length-1,1));
+        html+=`<div style="border-top:1px solid var(--bg3);padding-top:8px;margin-top:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;color:var(--text2)">${v.nombre} (${v.unidad})</span>
+            <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--amber)">${avg.toFixed(2)} ${v.unidad}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Mín: ${mn.toFixed(2)} · Máx: ${mx.toFixed(2)} · σ: ${std.toFixed(3)} · n: ${vals.length}</div>
+        </div>`;
+      });
+      html+='</div>';
+    }
+  });
+  cont.innerHTML=html||'<div class="card"><p style="color:var(--text3);font-size:13px;text-align:center;padding:14px 0">Sin datos suficientes.</p></div>';
+}
+
+// ===== EXPORTAR =====
+function exportCSV(){
+  const macroId=document.getElementById('sel-export-macro').value;
+  const macros=macroId?DB.macros.filter(x=>x.id===macroId):DB.macros;
+  let csv='Planta,Referencia,Descripción,Zona,Operación,Código,Tipo,Equipo,N.Muestra,T.Obs(s),Ritmo(%),T.Normal(s),T.Estándar(s),Peso.Entrada(kg),Peso.Salida(kg),Rendimiento(%),Nota,Fecha\n';
+  macros.forEach(m=>{
+    if(m.tipo==='tiempos'){
+      (m.operaciones||[]).forEach(op=>{
+        DB.muestras.filter(x=>x.macroId===m.id&&x.opId===op.id).forEach((mu,i)=>{
+          const d=new Date(mu.ts);
+          csv+=`"${m.planta||''}","${m.referencia||''}","${m.desc||m.nombre}","${op.zona||m.zona||''}","${op.desc}","${op.cod}","${op.tipoOp||''}","${op.equipo||''}",${i+1},${mu.t_obs},${mu.ritmo},${mu.t_norm},${mu.t_std},${mu.pe||''},${mu.ps||''},${mu.rendimiento||''},"${mu.nota||''}","${d.toLocaleDateString('es-CO')}"\n`;
+        });
+      });
+    } else {
+      (m.variables||[]).forEach(v=>{
+        DB.var_registros.filter(x=>x.macroId===m.id).forEach((r,i)=>{
+          const d=new Date(r.ts);
+          const val=r.valores?.[v.id]!=null?r.valores[v.id]:'';
+          csv+=`"${m.punto||m.nombre}","","${m.nombre}","","${v.nombre}","","","",${i+1},${val},"","","","","",""."${r.nota||''}","${d.toLocaleDateString('es-CO')}"\n`;
+        });
+      });
+    }
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  dl(blob,'TimeMaster_OPAV_'+new Date().toISOString().slice(0,10)+'.csv');
+  toast('CSV exportado — listo para Excel');
+}
+function exportJSON(){
+  dl(new Blob([JSON.stringify(DB,null,2)],{type:'application/json'}),'TimeMaster_backup_'+new Date().toISOString().slice(0,10)+'.json');
+  toast('Respaldo JSON exportado');
+}
+function importJSON(input){
+  const file=input.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.macros){DB=d;save();renderInicio();syncMacroSelects();toast('Datos importados');}
+      else toast('Archivo no válido');
+    }catch{toast('Error al leer el archivo');}
+  };
+  r.readAsText(file); input.value='';
+}
+function dl(blob,name){ const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u); }
+
+// ===== INIT =====
+renderInicio();
+syncMacroSelects();
+</script>
+</body>
+</html>
